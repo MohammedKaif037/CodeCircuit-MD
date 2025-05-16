@@ -12,12 +12,22 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   const [showSuccess, setShowSuccess] = useState(false)
 
   useEffect(() => {
+    // Load jsPDF
     if (!window.jspdf) {
-      const script = document.createElement("script")
-      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
-      script.async = true
-      script.onload = () => console.log("jsPDF loaded")
-      document.body.appendChild(script)
+      const jsPdfScript = document.createElement("script")
+      jsPdfScript.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
+      jsPdfScript.async = true
+      document.body.appendChild(jsPdfScript)
+    }
+
+    // Load html2canvas
+    if (!window.html2canvas) {
+      const html2canvasScript = document.createElement("script")
+      html2canvasScript.src = "https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+      html2canvasScript.async = true
+      html2canvasScript.onload = () => console.log("html2canvas loaded")
+      html2canvasScript.onerror = () => console.error("Failed to load html2canvas")
+      document.body.appendChild(html2canvasScript)
     }
   }, [])
 
@@ -27,8 +37,8 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       return
     }
 
-    if (!window.jspdf || !window.jspdf.jsPDF) {
-      alert("jsPDF is not ready yet. Please try again in a moment.")
+    if (!window.jspdf || !window.jspdf.jsPDF || !window.html2canvas) {
+      alert("PDF libraries are not fully loaded. Please wait and try again.")
       return
     }
 
@@ -56,6 +66,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       const { jsPDF } = window.jspdf
       const doc = new jsPDF()
 
+      // Wait for DOM render tick before rendering to PDF
       setTimeout(() => {
         doc.html(hiddenDiv, {
           callback: function (doc) {
@@ -108,11 +119,13 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   )
 }
 
+// Extend global types
 declare global {
   interface Window {
     jspdf: {
       jsPDF: any
     }
+    html2canvas?: any
   }
 }
 
