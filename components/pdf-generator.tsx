@@ -32,65 +32,69 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   }, [])
 
   const generatePdf = async () => {
-    if (!markdownContent.trim()) {
-      alert("Please enter some markdown content.")
-      return
-    }
-
-    if (!window.jspdf || !window.jspdf.jsPDF || !window.html2canvas) {
-      alert("PDF libraries are not fully loaded. Please wait and try again.")
-      return
-    }
-
-    setIsGenerating(true)
-    setShowSuccess(false)
-
-    try {
-      const marked = await import("marked")
-      marked.marked.setOptions({
-        breaks: true,
-        gfm: true,
-      })
-
-      const htmlContent = marked.marked.parse(markdownContent)
-
-      const hiddenDiv = document.createElement("div")
-      hiddenDiv.innerHTML = htmlContent
-      hiddenDiv.style.position = "absolute"
-      hiddenDiv.style.left = "-9999px"
-      hiddenDiv.style.top = "0"
-      hiddenDiv.style.width = "600px"
-      hiddenDiv.style.zIndex = "-1"
-      document.body.appendChild(hiddenDiv)
-
-      const { jsPDF } = window.jspdf
-      const doc = new jsPDF()
-
-      // Wait for DOM render tick before rendering to PDF
-      setTimeout(() => {
-        doc.html(hiddenDiv, {
-          callback: function (doc) {
-            doc.save(`${filename || "document"}.pdf`)
-            setShowSuccess(true)
-            setTimeout(() => setShowSuccess(false), 3000)
-            document.body.removeChild(hiddenDiv)
-          },
-          x: 10,
-          y: 10,
-          width: 180,
-          windowWidth: 650,
-          autoPaging: "text",
-          margin: [10, 10, 10, 10]
-        })
-      }, 0)
-
-    } catch (error) {
-      console.error("Error generating PDF:", error)
-      alert("There was an error generating your PDF. Please try again.")
-    } finally {
-      setIsGenerating(false)
-    }
+  if (!markdownContent.trim()) {
+    alert("Please enter some markdown content.")
+    return
   }
+
+  if (!window.jspdf || !window.jspdf.jsPDF || !window.html2canvas) {
+    alert("PDF libraries are not fully loaded. Please wait and try again.")
+    return
+  }
+
+  setIsGenerating(true)
+  setShowSuccess(false)
+
+  try {
+    const marked = await import("marked")
+    marked.marked.setOptions({
+      breaks: true,
+      gfm: true,
+    })
+
+    const htmlContent = marked.marked.parse(markdownContent)
+
+    // Create hidden container
+    const hiddenDiv = document.createElement("div")
+    hiddenDiv.innerHTML = htmlContent
+    hiddenDiv.style.position = "absolute"
+    hiddenDiv.style.left = "-9999px"
+    hiddenDiv.style.top = "0"
+    hiddenDiv.style.width = "650px"
+    hiddenDiv.style.padding = "20px"
+    hiddenDiv.style.fontSize = "14px"
+    hiddenDiv.style.lineHeight = "1.6"
+    hiddenDiv.style.fontFamily = "Arial, sans-serif"
+    document.body.appendChild(hiddenDiv)
+
+    // Wait for the browser to render the hidden content
+    await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+
+    const { jsPDF } = window.jspdf
+    const doc = new jsPDF()
+
+    doc.html(hiddenDiv, {
+      callback: function (doc) {
+        doc.save(`${filename || "document"}.pdf`)
+        setShowSuccess(true)
+        setTimeout(() => setShowSuccess(false), 3000)
+        document.body.removeChild(hiddenDiv)
+      },
+      x: 10,
+      y: 10,
+      width: 180,
+      windowWidth: 650,
+      autoPaging: "text",
+      margin: [10, 10, 10, 10]
+    })
+  } catch (error) {
+    console.error("Error generating PDF:", error)
+    alert("There was an error generating your PDF. Please try again.")
+  } finally {
+    setIsGenerating(false)
+  }
+}
+
 
   return (
     <div className="relative">
