@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 
 interface PdfGeneratorProps {
   markdownContent: string
@@ -9,71 +9,73 @@ interface PdfGeneratorProps {
 
 export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
+  const [showSuccess, setShowSuccess] = useState(false)
+
+  // Load necessary scripts
+  useEffect(() => {
+    // Load jsPDF if it's not already loaded
+    if (!window.jspdf) {
+      const script = document.createElement('script')
+      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+      script.async = true
+      document.body.appendChild(script)
+    }
+  }, [])
 
   const generatePdf = async () => {
-    // Quick content check
+    // Check if content exists
     if (!markdownContent.trim()) {
-      alert("Please add some content before generating a PDF.")
-      return
-    }
-
-    // Make sure we have the preview element
-    const previewElement = document.getElementById("markdownPreview")
-    if (!previewElement) {
-      console.error("Markdown preview element not found")
+      alert('Please enter some markdown content.')
       return
     }
 
     setIsGenerating(true)
+    setShowSuccess(false)
 
     try {
-      // Dynamically import html2pdf
-      const html2pdf = (await import("html2pdf.js")).default
+      // Make sure marked is available
+      const marked = await import("marked")
+      marked.marked.setOptions({
+        breaks: true,
+        gfm: true,
+      })
       
-      // Create a clone to avoid modifying the original DOM
-      const clone = previewElement.cloneNode(true) as HTMLElement
+      // Convert markdown to HTML
+      const htmlContent = marked.marked.parse(markdownContent)
       
-      // Fix common issues that cause blank PDFs
-      clone.style.height = "auto"
-      clone.style.maxHeight = "none" // Remove any height constraints
-      clone.style.overflow = "visible"
-      clone.style.width = "210mm" // A4 width
-      clone.style.padding = "15mm"
+      // Create a new jsPDF instance
+      const { jsPDF } = window.jspdf
+      const doc = new jsPDF()
       
-      // We need this clone in the document for html2pdf to see it properly
-      document.body.appendChild(clone)
-      clone.style.position = "fixed"
-      clone.style.top = "-9999px" // Hide it offscreen
+      // Use a nice font
+      doc.setFont('Helvetica', 'normal')
       
-      // Let browser render the clone before capturing
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // Generate the PDF with better settings
-      const pdfResult = await html2pdf().from(clone).set({
-        filename: `${filename || "document"}.pdf`,
-        margin: [15, 15, 15, 15],
-        html2canvas: {
-          scale: 2, // Higher scale for better quality
-          useCORS: true,
-          logging: false,
-          letterRendering: true,
+      // Add the HTML content to the PDF
+      doc.html(htmlContent, {
+        callback: function (doc) {
+          // Save the PDF with the proper filename
+          doc.save(`${filename || "document"}.pdf`)
+          
+          // Show success message
+          setShowSuccess(true)
+          
+          // Hide success message after 3 seconds
+          setTimeout(() => {
+            setShowSuccess(false)
+          }, 3000)
         },
-        jsPDF: {
-          unit: "mm",
-          format: "a4",
-          orientation: "portrait",
-        },
-        // Improved page breaking settings
-        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-      }).save()
-      
-      // Clean up after ourselves
-      document.body.removeChild(clone)
+        x: 10,
+        y: 10,
+        width: 180, // Adjust the width for better content display
+        windowWidth: 650, // Window width for better rendering
+        autoPaging: 'text', // Automatically handle page breaks
+        margin: [10, 10, 10, 10] // Add consistent margins
+      })
       
       return true
     } catch (error) {
-      console.error("PDF generation failed:", error)
-      alert("Sorry, something went wrong while creating your PDF. Please try again.")
+      console.error("Error generating PDF:", error)
+      alert("There was an error generating your PDF. Please try again.")
       return false
     } finally {
       setIsGenerating(false)
@@ -81,21 +83,39 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   }
 
   return (
-    <button
-      onClick={generatePdf}
-      disabled={isGenerating}
-      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
-    >
-      {isGenerating ? (
-        <>
-          <LoadingSpinner />
-          Creating PDF...
-        </>
-      ) : (
-        "Export as PDF"
+    <div className="relative">
+      <button
+        onClick={generatePdf}
+        disabled={isGenerating}
+        className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+        id="generatePdfBtn"
+      >
+        {isGenerating ? (
+          <>
+            <LoadingSpinner />
+            Creating PDF...
+          </>
+        ) : (
+          "Export as PDF"
+        )}
+      </button>
+      
+      {showSuccess && (
+        <div className="absolute top-full mt-2 p-2 bg-green-100 text-green-800 rounded-md text-sm" id="successMessage">
+          PDF created successfully!
+        </div>
       )}
-    </button>
+    </div>
   )
+}
+
+// Add necessary types to window
+declare global {
+  interface Window {
+    jspdf: {
+      jsPDF: any
+    }
+  }
 }
 
 function LoadingSpinner() {
