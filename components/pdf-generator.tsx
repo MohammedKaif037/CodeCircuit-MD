@@ -180,7 +180,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       // Set up PDF document
       const pageWidth = doc.internal.pageSize.getWidth();
       const contentWidth = pageWidth - 20; // 10mm margins on each side
-      const pageHeight = doc.internal.pageSize.getHeight();
+      pageHeight = doc.internal.pageSize.getHeight();
       const contentHeight = pageHeight - 20; // 10mm margins top and bottom
       
       let yPosition = 10; // Start position from top with margin
