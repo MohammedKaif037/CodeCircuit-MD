@@ -131,9 +131,9 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       // Wait for any images to load
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      // Make sure jsPDF is available
-      if (!window.jspdf || !window.jspdf.jsPDF) {
-        throw new Error("jsPDF not loaded properly")
+      // Check if we have the required libraries
+      if (!window.jspdf || !window.jspdf.jsPDF || !window.html2canvas) {
+        throw new Error("Required PDF libraries not loaded properly")
       }
 
       const { jsPDF } = window.jspdf
@@ -144,7 +144,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       })
 
       // Calculate content height to determine if multiple pages are needed
-      const contentHeight = contentContainer.offsetHeight
+      const fullContentHeight = contentContainer.offsetHeight
       const pageHeight = doc.internal.pageSize.getHeight()
       
       // Instead of using html2canvas for the entire content at once,
@@ -180,8 +180,8 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       // Set up PDF document
       const pageWidth = doc.internal.pageSize.getWidth();
       const contentWidth = pageWidth - 20; // 10mm margins on each side
-      pageHeight = doc.internal.pageSize.getHeight();
-      const contentHeight = pageHeight - 20; // 10mm margins top and bottom
+      const pageHeight = doc.internal.pageSize.getHeight();
+      const availableHeight = pageHeight - 20; // 10mm margins top and bottom
       
       let yPosition = 10; // Start position from top with margin
       let currentPage = 1;
@@ -202,7 +202,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
         const sectionHeight = section.offsetHeight;
         
         // Check if the section might be too large for one page
-        if (sectionHeight > contentHeight * 0.9) {
+        if (sectionHeight > availableHeight * 0.9) {
           // For large sections, use piecemeal approach
           const canvas = await window.html2canvas(section, {
             scale: 2,
@@ -332,4 +332,4 @@ function LoadingSpinner() {
       ></path>
     </svg>
   )
-          }
+            }
