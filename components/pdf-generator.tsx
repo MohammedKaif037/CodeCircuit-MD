@@ -11,63 +11,69 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
 
   const generatePdf = async () => {
+    // Quick content check
     if (!markdownContent.trim()) {
-      alert("Please enter some markdown content.")
+      alert("Please add some content before generating a PDF.")
       return
     }
 
-    const element = document.getElementById("markdownPreview")
-    if (!element) return
+    // Make sure we have the preview element
+    const previewElement = document.getElementById("markdownPreview")
+    if (!previewElement) {
+      console.error("Markdown preview element not found")
+      return
+    }
 
     setIsGenerating(true)
 
     try {
-      // Import html2pdf dynamically
+      // Dynamically import html2pdf
       const html2pdf = (await import("html2pdf.js")).default
-
-      // Create a clone of the preview element to avoid modifying the original
-      const clonedElement = element.cloneNode(true) as HTMLElement
-
-      // Remove height constraint and overflow to ensure all content is visible
-      clonedElement.style.height = "auto"
-      clonedElement.style.overflow = "visible"
-      clonedElement.style.maxWidth = "100%"
-
-      // Add A4 sizing
-      clonedElement.classList.add("pdf-content")
-
-      // Temporarily append to document but hide it
-      clonedElement.style.position = "absolute"
-      clonedElement.style.left = "-9999px"
-      document.body.appendChild(clonedElement)
-
-      // Generate PDF with proper A4 formatting
-      await html2pdf()
-        .from(clonedElement)
-        .set({
-          filename: `${filename || "notes"}.pdf`,
-          margin: [15, 15, 15, 15],
-          html2canvas: {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            letterRendering: true,
-          },
-          jsPDF: {
-            unit: "mm",
-            format: "a4",
-            orientation: "portrait",
-          },
-          pagebreak: { mode: ["avoid-all", "css", "legacy"] },
-        })
-        .save()
-
-      // Clean up the cloned element
-      document.body.removeChild(clonedElement)
-
+      
+      // Create a clone to avoid modifying the original DOM
+      const clone = previewElement.cloneNode(true) as HTMLElement
+      
+      // Fix common issues that cause blank PDFs
+      clone.style.height = "auto"
+      clone.style.maxHeight = "none" // Remove any height constraints
+      clone.style.overflow = "visible"
+      clone.style.width = "210mm" // A4 width
+      clone.style.padding = "15mm"
+      
+      // We need this clone in the document for html2pdf to see it properly
+      document.body.appendChild(clone)
+      clone.style.position = "fixed"
+      clone.style.top = "-9999px" // Hide it offscreen
+      
+      // Let browser render the clone before capturing
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
+      // Generate the PDF with better settings
+      const pdfResult = await html2pdf().from(clone).set({
+        filename: `${filename || "document"}.pdf`,
+        margin: [15, 15, 15, 15],
+        html2canvas: {
+          scale: 2, // Higher scale for better quality
+          useCORS: true,
+          logging: false,
+          letterRendering: true,
+        },
+        jsPDF: {
+          unit: "mm",
+          format: "a4",
+          orientation: "portrait",
+        },
+        // Improved page breaking settings
+        pagebreak: { mode: ["avoid-all", "css", "legacy"] },
+      }).save()
+      
+      // Clean up after ourselves
+      document.body.removeChild(clone)
+      
       return true
     } catch (error) {
-      console.error("Error generating PDF:", error)
+      console.error("PDF generation failed:", error)
+      alert("Sorry, something went wrong while creating your PDF. Please try again.")
       return false
     } finally {
       setIsGenerating(false)
@@ -83,10 +89,10 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       {isGenerating ? (
         <>
           <LoadingSpinner />
-          Generating PDF...
+          Creating PDF...
         </>
       ) : (
-        "Generate PDF"
+        "Export as PDF"
       )}
     </button>
   )
