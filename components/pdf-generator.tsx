@@ -76,19 +76,12 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       contentContainer.style.color = "#000"
       contentContainer.style.backgroundColor = "#fff"
 
-      // Style headings specifically to prevent page breaks
+      // Style headings
       const headings = contentContainer.querySelectorAll('h1, h2, h3, h4, h5, h6')
       headings.forEach(heading => {
         heading.style.marginTop = '20px'
         heading.style.marginBottom = '10px'
         heading.style.fontWeight = 'bold'
-        heading.style.pageBreakBefore = 'always' // Force headings to start on a new page if needed
-        heading.style.pageBreakAfter = 'avoid' // Prevent page break after heading
-        heading.style.pageBreakInside = 'avoid' // Prevent page break inside heading
-        // Modern CSS equivalents
-        heading.style.breakBefore = 'page' 
-        heading.style.breakAfter = 'avoid'
-        heading.style.breakInside = 'avoid'
       })
 
       // Style lists
@@ -131,9 +124,9 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       // Wait for any images to load
       await new Promise(resolve => setTimeout(resolve, 200))
 
-      // Check if we have the required libraries
-      if (!window.jspdf || !window.jspdf.jsPDF || !window.html2canvas) {
-        throw new Error("Required PDF libraries not loaded properly")
+      // Make sure jsPDF is available
+      if (!window.jspdf || !window.jspdf.jsPDF) {
+        throw new Error("jsPDF not loaded properly")
       }
 
       const { jsPDF } = window.jspdf
@@ -144,111 +137,40 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       })
 
       // Calculate content height to determine if multiple pages are needed
-      const fullContentHeight = contentContainer.offsetHeight
+      const contentHeight = contentContainer.offsetHeight
       const pageHeight = doc.internal.pageSize.getHeight()
       
-      // Instead of using html2canvas for the entire content at once,
-      // we'll break the content into sections based on headings to prevent page breaks within headings
+      // Use html2canvas to render to PDF
+      const canvas = await window.html2canvas(contentContainer, {
+        scale: 2, // Higher quality rendering
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff"
+      })
+
+      // Convert canvas to image
+      const imgData = canvas.toDataURL('image/jpeg', 1.0)
       
-      // Get all heading elements to use as section breaks
-      const headingElements = contentContainer.querySelectorAll('h1, h2, h3, h4, h5, h6');
-      const sections = [];
-      
-      // If we have headings, use them to divide the content
-      if (headingElements.length > 0) {
-        // Create sections based on headings
-        headingElements.forEach((heading, index) => {
-          const sectionDiv = document.createElement('div');
-          sectionDiv.style.pageBreakInside = 'avoid'; // CSS hint to avoid breaking inside a section
-          sectionDiv.style.breakInside = 'avoid'; // Modern browsers
-          sectionDiv.appendChild(heading.cloneNode(true));
-          
-          // Add all content until next heading
-          let nextElement = heading.nextElementSibling;
-          while (nextElement && !nextElement.matches('h1, h2, h3, h4, h5, h6')) {
-            sectionDiv.appendChild(nextElement.cloneNode(true));
-            nextElement = nextElement.nextElementSibling;
-          }
-          
-          sections.push(sectionDiv);
-        });
-      } else {
-        // If no headings, treat the whole content as one section
-        sections.push(contentContainer);
-      }
-      
-      // Set up PDF document
-      const pageWidth = doc.internal.pageSize.getWidth();
-      const contentWidth = pageWidth - 20; // 10mm margins on each side
-      pageHeight = doc.internal.pageSize.getHeight();
-      const availableHeight = pageHeight - 20; // 10mm margins top and bottom
-      
-      let yPosition = 10; // Start position from top with margin
-      let currentPage = 1;
-      
-      // Process each section
-      for (let i = 0; i < sections.length; i++) {
-        const section = sections[i];
-        document.body.appendChild(section);
-        
-        // Check if we need to add a page
-        if (i > 0 && yPosition > pageHeight * 0.75) {
-          doc.addPage();
-          currentPage++;
-          yPosition = 10;
-        }
-        
-        // Get section dimensions
-        const sectionHeight = section.offsetHeight;
-        
-        // Check if the section might be too large for one page
-        if (sectionHeight > availableHeight * 0.9) {
-          // For large sections, use piecemeal approach
-          const canvas = await window.html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff"
-          });
-          
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const imgWidth = contentWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          // If section won't fit on current page, add a new page
-          if (yPosition + imgHeight > pageHeight - 10) {
-            doc.addPage();
-            currentPage++;
-            yPosition = 10;
-          }
-          
-          doc.addImage(imgData, 'JPEG', 10, yPosition, imgWidth, imgHeight);
-          yPosition += imgHeight + 5; // Add some spacing
-        } else {
-          // For smaller sections that should fit on one page
-          const canvas = await window.html2canvas(section, {
-            scale: 2,
-            useCORS: true,
-            logging: false,
-            backgroundColor: "#ffffff"
-          });
-          
-          const imgData = canvas.toDataURL('image/jpeg', 1.0);
-          const imgWidth = contentWidth;
-          const imgHeight = (canvas.height * imgWidth) / canvas.width;
-          
-          // If section won't fit on current page, add a new page
-          if (yPosition + imgHeight > pageHeight - 10) {
-            doc.addPage();
-            currentPage++;
-            yPosition = 10;
-          }
-          
-          doc.addImage(imgData, 'JPEG', 10, yPosition, imgWidth, imgHeight);
-          yPosition += imgHeight + 5; // Add some spacing
-        }
-        
-        document.body.removeChild(section);
+      // Calculate scaling to fit on PDF page width
+      const pageWidth = doc.internal.pageSize.getWidth()
+      const imgWidth = pageWidth - 20 // 10mm margins on each side
+      const imgHeight = (canvas.height * imgWidth) / canvas.width
+
+      let heightLeft = imgHeight
+      let position = 10
+      let pageCount = 1
+
+      // Add first page with image
+      doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
+      heightLeft -= pageHeight - position
+
+      // Add additional pages if needed
+      while (heightLeft > 0) {
+        doc.addPage()
+        pageCount++
+        position = 10 // Reset position to top of page with margin
+        doc.addImage(imgData, 'JPEG', 10, position - (pageHeight * (pageCount - 1)), imgWidth, imgHeight)
+        heightLeft -= pageHeight
       }
 
       // Add metadata
@@ -332,4 +254,4 @@ function LoadingSpinner() {
       ></path>
     </svg>
   )
-            }
+        }
