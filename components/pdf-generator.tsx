@@ -22,65 +22,63 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
     }
   }, [])
 
-  const generatePdf = async () => {
-    // Check if content exists
-    if (!markdownContent.trim()) {
-      alert('Please enter some markdown content.')
-      return
-    }
-
-    setIsGenerating(true)
-    setShowSuccess(false)
-
-    try {
-      // Make sure marked is available
-      const marked = await import("marked")
-      marked.marked.setOptions({
-        breaks: true,
-        gfm: true,
-      })
-      
-      // Convert markdown to HTML
-      const htmlContent = marked.marked.parse(markdownContent)
-      
-      // Create a new jsPDF instance
-      const { jsPDF } = window.jspdf
-      const doc = new jsPDF()
-      
-      // Use a nice font
-      doc.setFont('Helvetica', 'normal')
-      
-      // Add the HTML content to the PDF
-      doc.html(htmlContent, {
-        callback: function (doc) {
-          // Save the PDF with the proper filename
-          doc.save(`${filename || "document"}.pdf`)
-          
-          // Show success message
-          setShowSuccess(true)
-          
-          // Hide success message after 3 seconds
-          setTimeout(() => {
-            setShowSuccess(false)
-          }, 3000)
-        },
-        x: 10,
-        y: 10,
-        width: 180, // Adjust the width for better content display
-        windowWidth: 650, // Window width for better rendering
-        autoPaging: 'text', // Automatically handle page breaks
-        margin: [10, 10, 10, 10] // Add consistent margins
-      })
-      
-      return true
-    } catch (error) {
-      console.error("Error generating PDF:", error)
-      alert("There was an error generating your PDF. Please try again.")
-      return false
-    } finally {
-      setIsGenerating(false)
-    }
+const generatePdf = async () => {
+  if (!markdownContent.trim()) {
+    alert("Please enter some markdown content.");
+    return;
   }
+
+  setIsGenerating(true);
+  setShowSuccess(false);
+
+  try {
+    const marked = await import("marked");
+    marked.marked.setOptions({
+      breaks: true,
+      gfm: true,
+    });
+
+    // Convert to HTML
+    const htmlContent = marked.marked.parse(markdownContent);
+
+    // Create a hidden container in the DOM
+    const hiddenDiv = document.createElement("div");
+    hiddenDiv.innerHTML = htmlContent;
+    hiddenDiv.style.position = "absolute";
+    hiddenDiv.style.left = "-9999px"; // Hide it offscreen
+    document.body.appendChild(hiddenDiv);
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Use the hidden div as input
+    doc.html(hiddenDiv, {
+      callback: function (doc) {
+        doc.save(`${filename || "document"}.pdf`);
+        setShowSuccess(true);
+
+        setTimeout(() => {
+          setShowSuccess(false);
+        }, 3000);
+
+        document.body.removeChild(hiddenDiv); // Clean up
+      },
+      x: 10,
+      y: 10,
+      width: 180,
+      windowWidth: 650,
+      autoPaging: "text",
+      margin: [10, 10, 10, 10],
+    });
+
+  } catch (error) {
+    console.error("Error generating PDF:", error);
+    alert("There was an error generating your PDF. Please try again.");
+  } finally {
+    setIsGenerating(false);
+  }
+};
+
 
   return (
     <div className="relative">
