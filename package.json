@@ -1,15 +1,27 @@
 {
+  // the name of your project
   "name": "md-project",
+
+  // current version of your app
   "version": "0.1.0",
+
+  // this makes sure your project isn't accidentally published to npm
   "private": true,
+
+  // scripts you can run from the command line
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "dev": "next dev",         // start Next.js in development mode
+    "build": "next build",     // build your app for production
+    "start": "next start",     // start the production server
+    "lint": "next lint"        // check your code for linting errors
   },
+
+  // main dependencies your app needs to run
   "dependencies": {
+    // form validation resolvers for react-hook-form
     "@hookform/resolvers": "^3.9.1",
+
+    // lots of UI components from Radix UI (accordion, dialog, menus, etc.)
     "@radix-ui/react-accordion": "1.2.2",
     "@radix-ui/react-alert-dialog": "1.1.4",
     "@radix-ui/react-aspect-ratio": "1.1.1",
@@ -37,37 +49,98 @@
     "@radix-ui/react-toggle": "1.1.1",
     "@radix-ui/react-toggle-group": "1.1.1",
     "@radix-ui/react-tooltip": "1.1.6",
+
+    // Tailwind CSS plugin for beautiful typography
     "@tailwindcss/typography": "latest",
+
+    // autoprefixer for adding vendor prefixes to CSS
     "autoprefixer": "^10.4.20",
+
+    // utility for handling className variants (handy with Tailwind)
     "class-variance-authority": "^0.7.1",
+
+    // utility for conditionally joining classNames together
     "clsx": "^2.1.1",
+
+    // command palette component for React
     "cmdk": "1.0.4",
+
+    // date utility library
     "date-fns": "4.1.0",
+
+    // embla carousel for slick, touch-friendly carousels
     "embla-carousel-react": "8.5.1",
+
+    // convert HTML to PDF in the browser
     "html2pdf.js": "latest",
+
+    // input component for one-time passwords (OTP)
     "input-otp": "1.4.1",
+
+    // icon library for React
     "lucide-react": "^0.454.0",
+
+    // markdown parser for JavaScript
     "marked": "latest",
+
+    // the core Next.js framework
     "next": "15.2.4",
+
+    // theme switching for Next.js apps (light/dark mode)
     "next-themes": "^0.4.4",
+
+    // the main React library
     "react": "^19",
+
+    // date picker component for React
     "react-day-picker": "8.10.1",
+
+    // React DOM bindings
     "react-dom": "^19",
+
+    // forms in React, with hooks
     "react-hook-form": "^7.54.1",
+
+    // resizable panel layout for React
     "react-resizable-panels": "^2.1.7",
+
+    // charting library for React
     "recharts": "2.15.0",
+
+    // toast notifications for React
     "sonner": "^1.7.1",
+
+    // utility for merging Tailwind CSS classes
     "tailwind-merge": "^2.5.5",
+
+    // Tailwind plugin for CSS animations
     "tailwindcss-animate": "^1.0.7",
+
+    // modal library for React
     "vaul": "^0.9.6",
+
+    // schema validation with TypeScript support
     "zod": "^3.24.1"
   },
+
+  // these are only needed during development
   "devDependencies": {
+    // TypeScript types for Node.js
     "@types/node": "^22",
+
+    // TypeScript types for React
     "@types/react": "^19",
+
+    // TypeScript types for ReactDOM
     "@types/react-dom": "^19",
+
+    // PostCSS for transforming CSS
     "postcss": "^8",
+
+    // Tailwind CSS framework
     "tailwindcss": "^3.4.17",
+
+    // TypeScript language support
     "typescript": "^5"
   }
 }
