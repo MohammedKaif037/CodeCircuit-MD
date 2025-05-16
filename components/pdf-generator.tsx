@@ -11,74 +11,75 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
 
-  // Load necessary scripts
   useEffect(() => {
-    // Load jsPDF if it's not already loaded
     if (!window.jspdf) {
-      const script = document.createElement('script')
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+      const script = document.createElement("script")
+      script.src = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"
       script.async = true
+      script.onload = () => console.log("jsPDF loaded")
       document.body.appendChild(script)
     }
   }, [])
 
-const generatePdf = async () => {
-  if (!markdownContent.trim()) {
-    alert("Please enter some markdown content.");
-    return;
+  const generatePdf = async () => {
+    if (!markdownContent.trim()) {
+      alert("Please enter some markdown content.")
+      return
+    }
+
+    if (!window.jspdf || !window.jspdf.jsPDF) {
+      alert("jsPDF is not ready yet. Please try again in a moment.")
+      return
+    }
+
+    setIsGenerating(true)
+    setShowSuccess(false)
+
+    try {
+      const marked = await import("marked")
+      marked.marked.setOptions({
+        breaks: true,
+        gfm: true,
+      })
+
+      const htmlContent = marked.marked.parse(markdownContent)
+
+      const hiddenDiv = document.createElement("div")
+      hiddenDiv.innerHTML = htmlContent
+      hiddenDiv.style.position = "absolute"
+      hiddenDiv.style.left = "-9999px"
+      hiddenDiv.style.top = "0"
+      hiddenDiv.style.width = "600px"
+      hiddenDiv.style.zIndex = "-1"
+      document.body.appendChild(hiddenDiv)
+
+      const { jsPDF } = window.jspdf
+      const doc = new jsPDF()
+
+      setTimeout(() => {
+        doc.html(hiddenDiv, {
+          callback: function (doc) {
+            doc.save(`${filename || "document"}.pdf`)
+            setShowSuccess(true)
+            setTimeout(() => setShowSuccess(false), 3000)
+            document.body.removeChild(hiddenDiv)
+          },
+          x: 10,
+          y: 10,
+          width: 180,
+          windowWidth: 650,
+          autoPaging: "text",
+          margin: [10, 10, 10, 10]
+        })
+      }, 0)
+
+    } catch (error) {
+      console.error("Error generating PDF:", error)
+      alert("There was an error generating your PDF. Please try again.")
+    } finally {
+      setIsGenerating(false)
+    }
   }
-
-  setIsGenerating(true);
-  setShowSuccess(false);
-
-  try {
-    const marked = await import("marked");
-    marked.marked.setOptions({
-      breaks: true,
-      gfm: true,
-    });
-
-    // Convert to HTML
-    const htmlContent = marked.marked.parse(markdownContent);
-
-    // Create a hidden container in the DOM
-    const hiddenDiv = document.createElement("div");
-    hiddenDiv.innerHTML = htmlContent;
-    hiddenDiv.style.position = "absolute";
-    hiddenDiv.style.left = "-9999px"; // Hide it offscreen
-    document.body.appendChild(hiddenDiv);
-
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
-
-    // Use the hidden div as input
-    doc.html(hiddenDiv, {
-      callback: function (doc) {
-        doc.save(`${filename || "document"}.pdf`);
-        setShowSuccess(true);
-
-        setTimeout(() => {
-          setShowSuccess(false);
-        }, 3000);
-
-        document.body.removeChild(hiddenDiv); // Clean up
-      },
-      x: 10,
-      y: 10,
-      width: 180,
-      windowWidth: 650,
-      autoPaging: "text",
-      margin: [10, 10, 10, 10],
-    });
-
-  } catch (error) {
-    console.error("Error generating PDF:", error);
-    alert("There was an error generating your PDF. Please try again.");
-  } finally {
-    setIsGenerating(false);
-  }
-};
-
 
   return (
     <div className="relative">
@@ -97,7 +98,7 @@ const generatePdf = async () => {
           "Export as PDF"
         )}
       </button>
-      
+
       {showSuccess && (
         <div className="absolute top-full mt-2 p-2 bg-green-100 text-green-800 rounded-md text-sm" id="successMessage">
           PDF created successfully!
@@ -107,7 +108,6 @@ const generatePdf = async () => {
   )
 }
 
-// Add necessary types to window
 declare global {
   interface Window {
     jspdf: {
