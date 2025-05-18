@@ -38,8 +38,76 @@ module.exports = {
           '80%': { transform: 'translate(3px, -3px)' },
           '100%': { transform: 'translate(0)' },
         }
-      }
+      },
+      typography: (theme) => ({
+        DEFAULT: {
+          css: {
+            color: theme('colors.cyberblue'),
+            h1: {
+              color: theme('colors.cyberpurple'),
+              fontFamily: theme('fontFamily.bungee'),
+              marginBottom: '0.75em',
+            },
+            h2: {
+              color: theme('colors.cyberpink'),
+              fontFamily: theme('fontFamily.bungee'),
+              marginBottom: '0.5em',
+            },
+            h3: {
+              color: theme('colors.cybercyan'),
+              fontFamily: theme('fontFamily.bungee'),
+            },
+            strong: {
+              color: theme('colors.cyberpink'),
+            },
+            a: {
+              color: theme('colors.cybercyan'),
+              textDecoration: 'none',
+              '&:hover': {
+                color: theme('colors.cyberpurple'),
+                textDecoration: 'underline',
+              },
+            },
+            code: {
+              color: theme('colors.cyberpink'),
+              backgroundColor: theme('colors.pink.50'),
+              padding: '0.2em 0.4em',
+              borderRadius: '0.25rem',
+              fontWeight: '500',
+            },
+            pre: {
+              backgroundColor: theme('colors.pink.50'),
+              borderWidth: '2px',
+              borderColor: theme('colors.black'),
+              boxShadow: theme('boxShadow.cyber'),
+            },
+            blockquote: {
+              borderLeftColor: theme('colors.cybercyan'),
+              color: theme('colors.cyberblue'),
+              fontStyle: 'normal',
+              backgroundColor: theme('colors.pink.50'),
+              padding: '0.5em 1em',
+            },
+            ul: {
+              li: {
+                '&:before': {
+                  backgroundColor: theme('colors.cyberpink'),
+                },
+              },
+            },
+            ol: {
+              li: {
+                '&:before': {
+                  color: theme('colors.cyberpink'),
+                },
+              },
+            },
+          },
+        },
+      }),
     }
   },
-  plugins: [],
+  plugins: [
+    require('@tailwindcss/typography'),
+  ],
 }
