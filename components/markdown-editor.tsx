@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef } from "react"
 import { FiBold, FiItalic, FiCode, FiLink, FiImage, FiList, FiQuote } from "react-icons/fi"
 
 interface MarkdownEditorProps {
@@ -8,7 +8,7 @@ interface MarkdownEditorProps {
   onChange: (value: string) => void
 }
 
-export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
+export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
   const [headingLevel, setHeadingLevel] = useState(1)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
   const [isGlitching, setIsGlitching] = useState(false)
