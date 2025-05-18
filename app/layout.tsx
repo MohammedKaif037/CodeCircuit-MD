@@ -1,23 +1,25 @@
-// import React types for typing components and props
-import type React from "react"
+"use client"
 
-// Import global CSS styles for the entire app
+import type React from "react"
+import type { Metadata } from "next"
+import { Inter, VT323 } from "next/font/google"
+import { ThemeProvider } from "@/components/theme-provider"
 import "./globals.css"
 
-// Import Metadata type from next for defining page metadata
-import type { Metadata } from "next"
-
-// import the Inter font from Google Fonts via Next.js font optimization
-import { Inter } from "next/font/google"
-
 // initialize the Inter font with latin subset
-const inter = Inter({ subsets: ["latin"] })
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" })
+// Add VT323 for cyberpop style
+const vt323 = VT323({ 
+  weight: ["400"],
+  subsets: ["latin"],
+  variable: "--font-vt323"
+})
 
 // Metadata for the app, used for SEO and page info
 export const metadata: Metadata = {
-  title: "Markdown Notes App", // title shown in browser tab
-  description: "Create and export markdown notes to PDF", // description for search engines
-  generator: 'v0.dev' // tool or platform that generated this app
+  title: "CyberNotes - Markdown Editor",
+  description: "Create and export markdown notes to PDF in cyberpop style",
+  generator: 'Kaif'
 }
 
 // RootLayout component wraps all pages and provides consistent layout
@@ -27,10 +29,13 @@ export default function RootLayout({
   children: React.ReactNode // typing the children prop
 }) {
   return (
-    <html lang="en"> {/* set document language to English */}
-      <body className={inter.className}> {/* apply Inter font to the entire body */}
-        {children} {/* render child components/pages here */}
+    <html lang="en" className={`${inter.variable} ${vt323.variable}`}>
+      <body className={`${vt323.className} font-bold`}>
+        <ThemeProvider>
+          {children}
+        </ThemeProvider>
       </body>
     </html>
   )
 }
+
