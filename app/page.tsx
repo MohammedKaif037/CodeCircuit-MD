@@ -1,10 +1,9 @@
-// app/page.tsx
 "use client"
 
 import { useState, useEffect } from "react"
 import type React from "react"
 import MarkdownEditor from "@/components/markdown-editor"
-import {MarkdownPreview} from "@/components/markdown-preview"
+import { MarkdownPreview } from "@/components/markdown-preview"
 import { PdfGenerator } from "@/components/pdf-generator"
 
 export default function Home() {
@@ -18,8 +17,7 @@ export default function Home() {
     if (savedContent) {
       setMarkdownContent(savedContent)
     }
-    
-    // Boot-up animation effect
+
     const timer = setTimeout(() => setIsBootUp(false), 1500)
     return () => clearTimeout(timer)
   }, [])
@@ -80,11 +78,16 @@ export default function Home() {
           )}
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <MarkdownEditor value={markdownContent} onChange={handleContentChange} />
-          <MarkdownPreview content={markdownContent} />
+        {/* Refactored layout with flex and full height children */}
+        <div className="flex flex-col md:flex-row gap-6 min-h-[500px]">
+          <div className="flex-1 h-full">
+            <MarkdownEditor value={markdownContent} onChange={handleContentChange} />
+          </div>
+          <div className="flex-1 h-full">
+            <MarkdownPreview content={markdownContent} />
+          </div>
         </div>
-        
+
         <div className="mt-4 text-center text-xs text-cyberblue/50 font-mono">
           SYSTEM READY {new Date().getFullYear()} v3.1.4
         </div>
