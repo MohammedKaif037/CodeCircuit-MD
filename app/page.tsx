@@ -59,7 +59,7 @@ export default function Home() {
             <PdfGenerator
               markdownContent={markdownContent}
               filename={filename}
-              apiKey="XN1mBAUG4"
+              apiKey={process.env.NEXT_PUBLIC_API_KEY}
               onSuccess={handlePdfSuccess}
             />
           </div>
