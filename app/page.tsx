@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from "react"
 import type React from "react"
-import { MarkdownEditor } from "@/components/markdown-editor"
+import MarkdownEditor  from "@/components/markdown-editor"
 import { MarkdownPreview } from "@/components/markdown-preview"
 import { PdfGenerator } from "@/components/pdf-generator"
 
