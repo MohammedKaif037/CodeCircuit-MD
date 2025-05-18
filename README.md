@@ -22,7 +22,7 @@ A 90s-inspired cyberpunk markdown editor with live preview and PDF export functi
 - **Framework**: [Next.js](https://nextjs.org/) (App Router)
 - **Styling**: [Tailwind CSS](https://tailwindcss.com/) with custom animations
 - **Markdown Processing**: [marked.js](https://marked.js.org/)
-- **PDF Generation**: [jsPDF](https://parall.ax/products/jspdf)
+- **PDF Generation**: [html2pdf] API (https://ekoopmans.github.io/html2pdf.js/)
 - **Icons**: [React Icons](https://react-icons.github.io/react-icons/)
 - **Type Safety**: TypeScript
 
@@ -103,10 +103,9 @@ Deploy with **Netlify**:
 
 ---
 
-## 🎥 Demo
+## 🔗 Live Demo
 
-[![Demo Video](./public/demo-thumbnail.jpg)](https://youtu.be/your-demo-video) <!-- Replace with actual video -->
-
+[Visit CyberNotes on Netlify](https://code-circuit-md.netlify.app/)
 ---
 
 ## 🤝 Contributing
@@ -130,8 +129,8 @@ git push origin feature/YourFeatureName
 
 ## 📧 Contact
 
-**Mohammed Kaif**: [kaifmohammed037@gmail.com](mailto:kaifmohammed037@gmail.com)
+**Mohammed Kaif**: [kaifmohammed037@gmail.com](mailto:kaifmohammed037@gmail.com)-LinkedIn:[linkedin.com/in/mohammed-kaif037](https://www.linkedin.com/in/mohammed-kaif-a7793923a?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app)
 
-**Project Link**: [https://github.com/your-username/cybernotes](https://github.com/MohammedKaif037/CodeCircuit-MD)
+**Project Link**: [GithubLink](https://github.com/MohammedKaif037/CodeCircuit-MD)
 
 
