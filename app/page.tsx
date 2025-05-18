@@ -56,7 +56,7 @@ export default function Home() {
                 className="px-3 py-2 border border-gray-300 rounded-md text-sm w-full md:w-64"
               />
             </div>
-            <PdfGenerator markdownContent={markdownContent} filename={filename} />
+            <PdfGenerator markdownContent={markdownContent} filename={filename} apiKey="cE0VrJS9jaKkJ5BK99T65Kfsu7y7EqwNA1FHHlOkqvqv40iSG4wlBunXN1mBAUG4"  />
           </div>
 
           {showSuccessMessage && (
