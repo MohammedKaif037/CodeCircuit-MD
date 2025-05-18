@@ -1,6 +1,6 @@
 # 🚀 CyberNotes - Retro-Futuristic Markdown Editor
 
-![CyberNotes Screenshot](./public/screenshot.png) <!-- Replace with your screenshot -->
+![CyberNotes Screenshot](./public/Screenshot.jpg) 
 
 A 90s-inspired cyberpunk markdown editor with live preview and PDF export functionality. Built with Next.js, Tailwind CSS, and TypeScript.
 
