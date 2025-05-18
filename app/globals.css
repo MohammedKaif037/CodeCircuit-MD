@@ -2,6 +2,21 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Bungee&display=swap');
+
+.cyberpop-theme {
+  --bg-primary: #ff77e9; /* Fuchsia-300 */
+  --text-primary: #1e3a8a; /* Blue-900 */
+  --accent-1: #67e8f9; /* Cyan-200 */
+  --accent-2: #f0abfc; /* Fuchsia-200 */
+  --shadow: #1e40af; /* Blue-800 */
+}
+
+/* Add cassette tape button style */
+.cassette-btn {
+  clip-path: polygon(15% 0%, 85% 0%, 100% 50%, 85% 100%, 15% 100%, 0% 50%);
+}
+
 /* Additional custom styles */
 .prose {
   color: #333;
