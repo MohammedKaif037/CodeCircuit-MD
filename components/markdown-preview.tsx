@@ -1,6 +1,7 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from "react"
+import DOMPurify from "dompurify"
 
 interface MarkdownPreviewProps {
   content: string
@@ -10,40 +11,41 @@ export function MarkdownPreview({ content }: MarkdownPreviewProps) {
   const [html, setHtml] = useState("")
 
   useEffect(() => {
-    // Only process if we have content
-    if (!content) {
-      setHtml("");
-      return;
-    }
-    
-    // Import marked library dynamically
-    import("marked").then((marked) => {
-      // Better marked configuration for PDF compatibility
-      marked.marked.setOptions({
-        breaks: true, // Convert line breaks to <br>
-        gfm: true,    // GitHub flavored markdown
-        headerIds: true, // Generate IDs for headers for better TOC support
-        mangle: false, // Don't escape HTML
-      })
+    const parseMarkdown = async () => {
+      if (!content) {
+        setHtml("")
+        return
+      }
 
       try {
-        // Parse markdown to HTML
-        const parsedHtml = marked.marked.parse(content)
-        setHtml(parsedHtml)
+        const marked = await import("marked")
+        marked.marked.setOptions({
+          breaks: true,
+          gfm: true,
+          headerIds: true,
+          mangle: false,
+        })
+
+        const dirtyHtml = marked.marked.parse(content)
+        setHtml(DOMPurify.sanitize(dirtyHtml))
       } catch (err) {
-        console.error("Error parsing markdown:", err)
-        setHtml(`<p>Error parsing markdown: ${err.message}</p>`)
+        console.error("Markdown parsing error:", err)
+        setHtml(`<p class="text-red-500">ERROR: ${err.message}</p>`)
       }
-    })
+    }
+
+    parseMarkdown()
   }, [content])
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+    <div className="relative bg-pink-50 rounded-lg border-2 border-black shadow-cyber-lg overflow-hidden crt">
       <div 
-        id="markdownPreview"
-        className="prose prose-slate max-w-none h-96 p-6 overflow-y-auto"
+        className="prose prose-cyber max-w-none h-full p-6 overflow-y-auto"
         dangerouslySetInnerHTML={{ __html: html }}
       />
+      <div className="absolute bottom-2 right-2 text-xs text-cyberblue/50 font-mono">
+        CYBERPREVIEW v3.1
+      </div>
     </div>
   )
 }
