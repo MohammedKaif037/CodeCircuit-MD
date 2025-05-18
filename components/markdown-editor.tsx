@@ -1,7 +1,8 @@
 'use client'
 
 import { useState, useRef } from "react"
-import { FiBold, FiItalic, FiCode, FiLink, FiImage, FiList, FiQuote } from "react-icons/fi"
+import { FiBold, FiItalic, FiCode, FiLink, FiImage, FiList } from "react-icons/fi"
+import { FaQuoteLeft } from "react-icons/fa"
 
 interface MarkdownEditorProps {
   value: string
@@ -57,7 +58,7 @@ export default function MarkdownEditor({ value, onChange }: MarkdownEditorProps)
     { icon: <FiLink />, action: () => formatText('[', '](url)', 'link text') },
     { icon: <FiImage />, action: () => formatText('![', '](image-url)', 'alt text') },
     { icon: <FiList />, action: () => formatText('- ', '', 'list item') },
-    { icon: <FiQuote />, action: () => formatText('> ', '', 'quote') },
+    { icon: <FaQuoteLeft />, action: () => formatText('> ', '', 'quote') },
   ]
 
   return (
