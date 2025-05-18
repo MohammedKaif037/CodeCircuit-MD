@@ -1,66 +1,16 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 
 interface PdfGeneratorProps {
   markdownContent: string
   filename: string
+  apiKey: string
 }
 
-export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
+export function PdfGenerator({ markdownContent, filename, apiKey }: PdfGeneratorProps) {
   const [isGenerating, setIsGenerating] = useState(false)
   const [showSuccess, setShowSuccess] = useState(false)
-  const [scriptsLoaded, setScriptsLoaded] = useState({
-    jspdf: false,
-    dompurify: false,
-  })
-
-  useEffect(() => {
-    // Load required scripts
-    const loadScript = (url: string, propertyName: 'jspdf' | 'dompurify') => {
-      if (!window[propertyName]) {
-        const script = document.createElement("script")
-        script.src = url
-        script.async = true
-        script.onload = () => {
-          console.log(`${propertyName} loaded successfully`)
-          setScriptsLoaded(prev => ({ ...prev, [propertyName]: true }))
-        }
-        script.onerror = () => {
-          console.error(`Failed to load ${propertyName}`)
-        }
-        document.body.appendChild(script)
-      } else {
-        setScriptsLoaded(prev => ({ ...prev, [propertyName]: true }))
-      }
-    }
-
-    // Load jsPDF with html plugin
-    loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", "jspdf")
-    
-    // Load DOMPurify for sanitizing HTML
-    loadScript("https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.1/purify.min.js", "dompurify")
-    
-    // Dynamically load the html plugin after jsPDF
-    const loadHtmlPlugin = () => {
-      if (window.jspdf && !window.jspdf.jsPDF?.prototype?.html) {
-        const script = document.createElement("script")
-        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
-        script.async = true
-        document.body.appendChild(script)
-      }
-    }
-    
-    // Check if jspdf is loaded every 500ms and load the html plugin when it is
-    const checkJsPdfInterval = setInterval(() => {
-      if (window.jspdf) {
-        loadHtmlPlugin()
-        clearInterval(checkJsPdfInterval)
-      }
-    }, 500)
-    
-    return () => clearInterval(checkJsPdfInterval)
-  }, [])
 
   const generatePdf = async () => {
     if (!markdownContent.trim()) {
@@ -68,8 +18,8 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       return
     }
 
-    if (!scriptsLoaded.jspdf || !scriptsLoaded.dompurify) {
-      alert("PDF libraries are still loading. Please wait a moment and try again.")
+    if (!apiKey) {
+      alert("API key is required.")
       return
     }
 
@@ -87,125 +37,134 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       // Convert markdown to HTML
       const htmlContent = marked.marked.parse(markdownContent)
       
-      // Sanitize HTML content for security
-      const sanitizedHtml = window.DOMPurify.sanitize(htmlContent)
+      // Create HTML document with proper styling
+      const fullHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>${filename || "Document"}</title>
+          <style>
+            body {
+              font-family: Arial, sans-serif;
+              line-height: 1.6;
+              color: #000;
+              margin: 0;
+              padding: 20px;
+              font-size: 12pt;
+            }
+            h1, h2, h3, h4, h5, h6 {
+              margin-top: 16px;
+              margin-bottom: 8px;
+              font-weight: bold;
+            }
+            h1 { font-size: 24pt; }
+            h2 { font-size: 20pt; }
+            h3 { font-size: 16pt; }
+            h4 { font-size: 14pt; }
+            h5 { font-size: 12pt; }
+            h6 { font-size: 11pt; }
+            ul, ol {
+              padding-left: 20px;
+              margin-bottom: 10px;
+            }
+            blockquote {
+              border-left: 4px solid #ccc;
+              padding-left: 15px;
+              margin-left: 0;
+              font-style: italic;
+            }
+            pre {
+              background-color: #f5f5f5;
+              padding: 10px;
+              border-radius: 4px;
+              overflow: auto;
+              margin-bottom: 10px;
+              font-family: "Courier New", monospace;
+              font-size: 10pt;
+              white-space: pre-wrap;
+            }
+            code {
+              background-color: #f5f5f5;
+              padding: 2px 4px;
+              border-radius: 4px;
+              font-family: "Courier New", monospace;
+              font-size: 10pt;
+            }
+            .page {
+              page-break-after: always;
+              page-break-inside: avoid;
+            }
+            a {
+              color: #0066cc;
+              text-decoration: underline;
+            }
+            img {
+              max-width: 100%;
+              height: auto;
+            }
+            table {
+              border-collapse: collapse;
+              width: 100%;
+              margin-bottom: 16px;
+            }
+            table, th, td {
+              border: 1px solid #ddd;
+            }
+            th, td {
+              padding: 8px;
+              text-align: left;
+            }
+            th {
+              background-color: #f5f5f5;
+            }
+          </style>
+        </head>
+        <body>
+          ${htmlContent}
+        </body>
+        </html>
+      `
 
-      // Create a styled container for the content
-      const contentContainer = document.createElement("div")
-      contentContainer.innerHTML = sanitizedHtml
-      contentContainer.id = "pdf-content"
-      contentContainer.style.fontSize = "12pt"
-      contentContainer.style.lineHeight = "1.6"
-      contentContainer.style.fontFamily = "Arial, sans-serif"
-      contentContainer.style.color = "#000"
-      contentContainer.style.padding = "20px"
-      contentContainer.style.maxWidth = "800px"
-      contentContainer.style.margin = "0 auto"
-
-      // Style headings
-      const headings = contentContainer.querySelectorAll('h1, h2, h3, h4, h5, h6')
-      headings.forEach(heading => {
-        heading.style.marginTop = '16px'
-        heading.style.marginBottom = '8px'
-        heading.style.fontWeight = 'bold'
-      })
-
-      // Style lists
-      const lists = contentContainer.querySelectorAll('ul, ol')
-      lists.forEach(list => {
-        list.style.paddingLeft = '20px'
-        list.style.marginBottom = '10px'
-      })
-
-      // Style blockquotes
-      const quotes = contentContainer.querySelectorAll('blockquote')
-      quotes.forEach(quote => {
-        quote.style.borderLeft = '4px solid #ccc'
-        quote.style.paddingLeft = '15px'
-        quote.style.marginLeft = '0'
-        quote.style.fontStyle = 'italic'
-      })
-
-      // Style code blocks
-      const codeBlocks = contentContainer.querySelectorAll('pre code')
-      codeBlocks.forEach(block => {
-        const pre = block.parentElement
-        if (pre) {
-          pre.style.backgroundColor = '#f5f5f5'
-          pre.style.padding = '10px'
-          pre.style.borderRadius = '4px'
-          pre.style.overflow = 'auto'
-          pre.style.marginBottom = '10px'
-          pre.style.fontFamily = 'Courier, monospace'
-          pre.style.fontSize = '10pt'
-          pre.style.whiteSpace = 'pre-wrap'
-        }
-      })
-
-      // Style inline code
-      const inlineCodes = contentContainer.querySelectorAll('code:not(pre code)')
-      inlineCodes.forEach(code => {
-        code.style.backgroundColor = '#f5f5f5'
-        code.style.padding = '2px 4px'
-        code.style.borderRadius = '4px'
-        code.style.fontFamily = 'Courier, monospace'
-        code.style.fontSize = '10pt'
-      })
-
-      // Hide the container temporarily while we generate the PDF
-      contentContainer.style.position = "absolute"
-      contentContainer.style.left = "-9999px"
-      document.body.appendChild(contentContainer)
-
-      // Make sure jsPDF is available
-      if (!window.jspdf || !window.jspdf.jsPDF) {
-        throw new Error("jsPDF not loaded properly")
-      }
-
-      // Initialize jsPDF
-      const { jsPDF } = window.jspdf
-      const doc = new jsPDF({
-        orientation: "portrait",
-        unit: "pt",
-        format: "a4",
-      })
-
-      // Use html2pdf.js for better text handling
-      if (window.html2pdf) {
-        const opt = {
-          margin: [40, 40, 40, 40],
+      // Use the html2pdf.app API to generate PDF with selectable text
+      const response = await fetch('https://api.html2pdf.app/v1/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          html: fullHtml,
+          apiKey: apiKey,
+          format: 'A4',
           filename: `${filename || "document"}.pdf`,
-          image: { type: 'jpeg', quality: 0.98 },
-          html2canvas: { scale: 2, useCORS: true },
-          jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
-          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
-        }
-        
-        await window.html2pdf().from(contentContainer).set(opt).save()
-        setShowSuccess(true)
-      } else {
-        // Fallback to using jsPDF directly with html method
-        // Only works if the html plugin is loaded
-        if (typeof doc.html === 'function') {
-          await doc.html(contentContainer, {
-            callback: function (pdf) {
-              pdf.save(`${filename || "document"}.pdf`)
-              setShowSuccess(true)
-            },
-            margin: [40, 40, 40, 40],
-            autoPaging: 'text',
-            x: 0,
-            y: 0,
-            width: doc.internal.pageSize.getWidth() - 80,
-            windowWidth: 800
-          })
-        } else {
-          throw new Error("PDF HTML plugin not loaded properly")
-        }
+          marginTop: 40,
+          marginRight: 40,
+          marginBottom: 40,
+          marginLeft: 40
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null)
+        throw new Error(errorData?.message || `API error: ${response.status}`)
       }
 
+      // Get the PDF as a blob and download it
+      const pdfBlob = await response.blob()
+      const url = window.URL.createObjectURL(pdfBlob)
+      
+      // Create temporary link and trigger download
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `${filename || "document"}.pdf`
+      document.body.appendChild(link)
+      link.click()
+      
       // Clean up
-      document.body.removeChild(contentContainer)
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(link)
+      
+      setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 3000)
     } catch (error) {
       console.error("Error generating PDF:", error)
@@ -219,7 +178,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
     <div className="relative">
       <button
         onClick={generatePdf}
-        disabled={isGenerating || !scriptsLoaded.jspdf}
+        disabled={isGenerating}
         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
         id="generatePdfBtn"
       >
@@ -227,11 +186,6 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
           <>
             <LoadingSpinner />
             Creating PDF...
-          </>
-        ) : !scriptsLoaded.jspdf ? (
-          <>
-            <LoadingSpinner />
-            Loading PDF tools...
           </>
         ) : (
           "Export as PDF"
@@ -245,17 +199,6 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       )}
     </div>
   )
-}
-
-// Extend global types
-declare global {
-  interface Window {
-    jspdf: {
-      jsPDF: any
-    }
-    DOMPurify: any
-    html2pdf: any
-  }
 }
 
 function LoadingSpinner() {
@@ -275,4 +218,3 @@ function LoadingSpinner() {
     </svg>
   )
 }
-
