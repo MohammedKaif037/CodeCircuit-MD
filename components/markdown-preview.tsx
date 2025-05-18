@@ -7,7 +7,7 @@ interface MarkdownPreviewProps {
   content: string
 }
 
-export  function MarkdownPreview({ content }: MarkdownPreviewProps) {
+export function MarkdownPreview({ content }: MarkdownPreviewProps) {
   const [html, setHtml] = useState("")
 
   useEffect(() => {
@@ -38,9 +38,9 @@ export  function MarkdownPreview({ content }: MarkdownPreviewProps) {
   }, [content])
 
   return (
-    <div className="relative bg-pink-50 rounded-lg border-2 border-black shadow-cyber-lg overflow-hidden crt">
+    <div className="relative bg-pink-100 border-2 border-black shadow-cyber w-full h-96 rounded-lg overflow-hidden crt">
       <div 
-        className="prose prose-sm md:prose-base h-full p-6 overflow-y-auto"
+        className="prose prose-sm md:prose-base h-full p-4 overflow-y-auto font-bold text-cyberblue"
         dangerouslySetInnerHTML={{ __html: html }}
       />
       <div className="absolute bottom-2 right-2 text-xs text-cyberblue/50 font-mono">
