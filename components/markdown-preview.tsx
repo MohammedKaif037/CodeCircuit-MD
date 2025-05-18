@@ -38,8 +38,8 @@ export function MarkdownPreview({ content }: MarkdownPreviewProps) {
   }, [content])
 
   return (
-    <div className="relative bg-pink-100 border-2 border-black shadow-cyber w-full h-96 rounded-lg overflow-hidden crt">
-      <div 
+    <div className="relative bg-pink-100 border-2 border-black shadow-cyber w-full h-[31.2rem] rounded-lg overflow-hidden crt">
+        <div
         className="prose prose-sm md:prose-base h-full p-4 overflow-y-auto font-bold text-cyberblue"
         dangerouslySetInnerHTML={{ __html: html }}
       />
