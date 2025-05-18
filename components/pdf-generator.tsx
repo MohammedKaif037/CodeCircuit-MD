@@ -12,12 +12,12 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
   const [showSuccess, setShowSuccess] = useState(false)
   const [scriptsLoaded, setScriptsLoaded] = useState({
     jspdf: false,
-    html2canvas: false,
+    dompurify: false,
   })
 
   useEffect(() => {
-    // Better script loading with proper tracking
-    const loadScript = (url: string, propertyName: 'jspdf' | 'html2canvas') => {
+    // Load required scripts
+    const loadScript = (url: string, propertyName: 'jspdf' | 'dompurify') => {
       if (!window[propertyName]) {
         const script = document.createElement("script")
         script.src = url
@@ -35,8 +35,31 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       }
     }
 
+    // Load jsPDF with html plugin
     loadScript("https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js", "jspdf")
-    loadScript("https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js", "html2canvas")
+    
+    // Load DOMPurify for sanitizing HTML
+    loadScript("https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.1/purify.min.js", "dompurify")
+    
+    // Dynamically load the html plugin after jsPDF
+    const loadHtmlPlugin = () => {
+      if (window.jspdf && !window.jspdf.jsPDF?.prototype?.html) {
+        const script = document.createElement("script")
+        script.src = "https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"
+        script.async = true
+        document.body.appendChild(script)
+      }
+    }
+    
+    // Check if jspdf is loaded every 500ms and load the html plugin when it is
+    const checkJsPdfInterval = setInterval(() => {
+      if (window.jspdf) {
+        loadHtmlPlugin()
+        clearInterval(checkJsPdfInterval)
+      }
+    }, 500)
+    
+    return () => clearInterval(checkJsPdfInterval)
   }, [])
 
   const generatePdf = async () => {
@@ -45,7 +68,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       return
     }
 
-    if (!scriptsLoaded.jspdf || !scriptsLoaded.html2canvas) {
+    if (!scriptsLoaded.jspdf || !scriptsLoaded.dompurify) {
       alert("PDF libraries are still loading. Please wait a moment and try again.")
       return
     }
@@ -54,33 +77,36 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
     setShowSuccess(false)
 
     try {
+      // Import marked for Markdown to HTML conversion
       const marked = await import("marked")
       marked.marked.setOptions({
         breaks: true,
         gfm: true,
       })
 
+      // Convert markdown to HTML
       const htmlContent = marked.marked.parse(markdownContent)
+      
+      // Sanitize HTML content for security
+      const sanitizedHtml = window.DOMPurify.sanitize(htmlContent)
 
       // Create a styled container for the content
       const contentContainer = document.createElement("div")
-      contentContainer.innerHTML = htmlContent
-      contentContainer.style.position = "absolute"
-      contentContainer.style.left = "-9999px"
-      contentContainer.style.top = "0"
-      contentContainer.style.width = "650px" 
-      contentContainer.style.padding = "40px"
-      contentContainer.style.fontSize = "14px"
+      contentContainer.innerHTML = sanitizedHtml
+      contentContainer.id = "pdf-content"
+      contentContainer.style.fontSize = "12pt"
       contentContainer.style.lineHeight = "1.6"
       contentContainer.style.fontFamily = "Arial, sans-serif"
       contentContainer.style.color = "#000"
-      contentContainer.style.backgroundColor = "#fff"
+      contentContainer.style.padding = "20px"
+      contentContainer.style.maxWidth = "800px"
+      contentContainer.style.margin = "0 auto"
 
       // Style headings
       const headings = contentContainer.querySelectorAll('h1, h2, h3, h4, h5, h6')
       headings.forEach(heading => {
-        heading.style.marginTop = '20px'
-        heading.style.marginBottom = '10px'
+        heading.style.marginTop = '16px'
+        heading.style.marginBottom = '8px'
         heading.style.fontWeight = 'bold'
       })
 
@@ -103,11 +129,17 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
       // Style code blocks
       const codeBlocks = contentContainer.querySelectorAll('pre code')
       codeBlocks.forEach(block => {
-        block.parentElement.style.backgroundColor = '#f5f5f5'
-        block.parentElement.style.padding = '10px'
-        block.parentElement.style.borderRadius = '4px'
-        block.parentElement.style.overflow = 'auto'
-        block.parentElement.style.marginBottom = '10px'
+        const pre = block.parentElement
+        if (pre) {
+          pre.style.backgroundColor = '#f5f5f5'
+          pre.style.padding = '10px'
+          pre.style.borderRadius = '4px'
+          pre.style.overflow = 'auto'
+          pre.style.marginBottom = '10px'
+          pre.style.fontFamily = 'Courier, monospace'
+          pre.style.fontSize = '10pt'
+          pre.style.whiteSpace = 'pre-wrap'
+        }
       })
 
       // Style inline code
@@ -116,77 +148,64 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
         code.style.backgroundColor = '#f5f5f5'
         code.style.padding = '2px 4px'
         code.style.borderRadius = '4px'
-        code.style.fontFamily = 'monospace'
+        code.style.fontFamily = 'Courier, monospace'
+        code.style.fontSize = '10pt'
       })
 
+      // Hide the container temporarily while we generate the PDF
+      contentContainer.style.position = "absolute"
+      contentContainer.style.left = "-9999px"
       document.body.appendChild(contentContainer)
-
-      // Wait for any images to load
-      await new Promise(resolve => setTimeout(resolve, 200))
 
       // Make sure jsPDF is available
       if (!window.jspdf || !window.jspdf.jsPDF) {
         throw new Error("jsPDF not loaded properly")
       }
 
+      // Initialize jsPDF
       const { jsPDF } = window.jspdf
       const doc = new jsPDF({
         orientation: "portrait",
-        unit: "mm",
+        unit: "pt",
         format: "a4",
       })
 
-      // Calculate content height to determine if multiple pages are needed
-      const contentHeight = contentContainer.offsetHeight
-      const pageHeight = doc.internal.pageSize.getHeight()
-      
-      // Use html2canvas to render to PDF
-      const canvas = await window.html2canvas(contentContainer, {
-        scale: 2, // Higher quality rendering
-        useCORS: true,
-        logging: false,
-        backgroundColor: "#ffffff"
-      })
-
-      // Convert canvas to image
-      const imgData = canvas.toDataURL('image/jpeg', 1.0)
-      
-      // Calculate scaling to fit on PDF page width
-      const pageWidth = doc.internal.pageSize.getWidth()
-      const imgWidth = pageWidth - 20 // 10mm margins on each side
-      const imgHeight = (canvas.height * imgWidth) / canvas.width
-
-      let heightLeft = imgHeight
-      let position = 10
-      let pageCount = 1
-
-      // Add first page with image
-      doc.addImage(imgData, 'JPEG', 10, position, imgWidth, imgHeight)
-      heightLeft -= pageHeight - position
-
-      // Add additional pages if needed
-      while (heightLeft > 0) {
-        doc.addPage()
-        pageCount++
-        position = 10 // Reset position to top of page with margin
-        doc.addImage(imgData, 'JPEG', 10, position - (pageHeight * (pageCount - 1)), imgWidth, imgHeight)
-        heightLeft -= pageHeight
+      // Use html2pdf.js for better text handling
+      if (window.html2pdf) {
+        const opt = {
+          margin: [40, 40, 40, 40],
+          filename: `${filename || "document"}.pdf`,
+          image: { type: 'jpeg', quality: 0.98 },
+          html2canvas: { scale: 2, useCORS: true },
+          jsPDF: { unit: 'pt', format: 'a4', orientation: 'portrait' },
+          pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+        }
+        
+        await window.html2pdf().from(contentContainer).set(opt).save()
+        setShowSuccess(true)
+      } else {
+        // Fallback to using jsPDF directly with html method
+        // Only works if the html plugin is loaded
+        if (typeof doc.html === 'function') {
+          await doc.html(contentContainer, {
+            callback: function (pdf) {
+              pdf.save(`${filename || "document"}.pdf`)
+              setShowSuccess(true)
+            },
+            margin: [40, 40, 40, 40],
+            autoPaging: 'text',
+            x: 0,
+            y: 0,
+            width: doc.internal.pageSize.getWidth() - 80,
+            windowWidth: 800
+          })
+        } else {
+          throw new Error("PDF HTML plugin not loaded properly")
+        }
       }
 
-      // Add metadata
-      doc.setProperties({
-        title: filename || "Document",
-        creator: "Markdown Editor",
-        subject: "Generated PDF from Markdown",
-        keywords: "markdown, pdf, document",
-      })
-
-      // Save the PDF
-      doc.save(`${filename || "document"}.pdf`)
-      
       // Clean up
       document.body.removeChild(contentContainer)
-      setShowSuccess(true)
       setTimeout(() => setShowSuccess(false), 3000)
     } catch (error) {
       console.error("Error generating PDF:", error)
@@ -200,7 +219,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
     <div className="relative">
       <button
         onClick={generatePdf}
-        disabled={isGenerating || !scriptsLoaded.jspdf || !scriptsLoaded.html2canvas}
+        disabled={isGenerating || !scriptsLoaded.jspdf}
         className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
         id="generatePdfBtn"
       >
@@ -209,7 +228,7 @@ export function PdfGenerator({ markdownContent, filename }: PdfGeneratorProps) {
             <LoadingSpinner />
             Creating PDF...
           </>
-        ) : !scriptsLoaded.jspdf || !scriptsLoaded.html2canvas ? (
+        ) : !scriptsLoaded.jspdf ? (
           <>
             <LoadingSpinner />
             Loading PDF tools...
@@ -234,7 +253,8 @@ declare global {
     jspdf: {
       jsPDF: any
     }
-    html2canvas: any
+    DOMPurify: any
+    html2pdf: any
   }
 }
 
@@ -254,4 +274,5 @@ function LoadingSpinner() {
       ></path>
     </svg>
   )
-        }
+}
+
